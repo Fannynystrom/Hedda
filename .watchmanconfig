@@ -1,0 +1,8 @@
+{
+    "ignore_dirs": ["node_modules"],
+    "idle_reap_age_seconds": 300,
+    "log_level": "debug"
+
+
+}
+
