@@ -8,6 +8,7 @@ const LogoutButton = () => {
   const handleLogout = () => {
    
     navigation.navigate('LoginScreen');
+    console.log("du har loggat in")
     
     // visa ett meddelande ifall man loggats ut
     Alert.alert("Utloggad", "Du har loggats ut från applikationen.");
