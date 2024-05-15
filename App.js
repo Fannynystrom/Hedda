@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Animated, View, TouchableOpacity, Image } from 'react-native';
-
+import { Animated, View, TouchableOpacity } from 'react-native';
 import HomeScreen from './components/homescreen';
 import PictureScreen from './components/picture';
 import EventsScreen from './components/events';
 import LoginScreen from './components/loginscreen'; // Importera din inloggningsskärm här
 import LogoutButton from './components/logoutbutton';
+import Config from 'react-native-config';
+
 const Tab = createMaterialTopTabNavigator();
 const Stack = createStackNavigator(); // Skapa en stacknavigator
 
@@ -49,6 +50,6 @@ function MainTabScreen() {
       <Tab.Screen name="Startsida" component={HomeScreen} />
       <Tab.Screen name="Bilder" component={PictureScreen} />
       <Tab.Screen name="Händelser" component={EventsScreen} />
-      </Tab.Navigator>
+    </Tab.Navigator>
   );
 }
