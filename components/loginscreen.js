@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import HomeScreen from '../components/homescreen';
-import { USERNAME, PASSWORD } from '@env';  // lösenord och användarnamn
 
+const HARDCODED_USERNAME = 'fannosa';
+const HARDCODED_PASSWORD = 'fannosa';
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    if (username === USERNAME && password === PASSWORD) {  
-      navigation.navigate('Main'); 
+    if (username === HARDCODED_USERNAME && password === HARDCODED_PASSWORD) {
+      navigation.navigate('Main');
     } else {
-      // misslyckad inloggning
-      alert('Fel användarnamn eller lösenord. Försök igen.');
+      // Misslyckad inloggning
+      Alert.alert('Fel användarnamn eller lösenord. Försök igen.');
     }
   };
 

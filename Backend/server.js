@@ -1,33 +1,37 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+// import express from 'express';
+// import mongoose from 'mongoose';
+// import dotenv from 'dotenv';
 
-dotenv.config();
+// dotenv.config();
 
-const app = express();
-const port = 3000;
+// const app = express();
+// const port = 3000;
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// <<<<<<< HEAD
+// =======
 
-const pictureSchema = new mongoose.Schema({
-  month: String,
-  uri: String,
-});
+// >>>>>>> e3ae4b67e6badd7eb2b940dc5163b353281663a2
+// mongoose.connect(process.env.MONGODB_URI)
+//   .then(() => console.log('MongoDB connected'))
+//   .catch(err => console.error('MongoDB connection error:', err));
 
-const Picture = mongoose.model('Picture', pictureSchema);
+// const pictureSchema = new mongoose.Schema({
+//   month: String,
+//   uri: String,
+// });
 
-// Middleware to parse JSON bodies
-app.use(express.json());
+// const Picture = mongoose.model('Picture', pictureSchema);
 
-// Endpoint to get pictures
-app.get('/pictures', (req, res) => {
-  Picture.find()
-    .then((pictures) => res.json(pictures))
-    .catch((err) => res.status(500).send(err));
-});
+// // Middleware to parse JSON bodies
+// app.use(express.json());
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+// // Endpoint to get pictures
+// app.get('/pictures', (req, res) => {
+//   Picture.find()
+//     .then((pictures) => res.json(pictures))
+//     .catch((err) => res.status(500).send(err));
+// });
+
+// app.listen(port, () => {
+//   console.log(`Server running at http://localhost:${port}`);
+// });

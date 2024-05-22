@@ -7,7 +7,6 @@ import HomeScreen from './components/homescreen';
 import PictureScreen from './components/picture';
 import EventsScreen from './components/events';
 import LoginScreen from './components/loginscreen';
-import dotenv from '@dotenv';
 
 const Tab = createMaterialTopTabNavigator();
 const Stack = createStackNavigator(); // Skapa en stacknavigator
