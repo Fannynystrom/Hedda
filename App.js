@@ -6,9 +6,8 @@ import { Animated, View, TouchableOpacity } from 'react-native';
 import HomeScreen from './components/homescreen';
 import PictureScreen from './components/picture';
 import EventsScreen from './components/events';
-import LoginScreen from './components/loginscreen'; // Importera din inloggningsskärm här
-import LogoutButton from './components/logoutbutton';
-import Config from 'react-native-config';
+import LoginScreen from './components/loginscreen';
+import dotenv from '@dotenv';
 
 const Tab = createMaterialTopTabNavigator();
 const Stack = createStackNavigator(); // Skapa en stacknavigator
