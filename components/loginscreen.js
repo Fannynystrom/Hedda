@@ -1,29 +1,29 @@
+// components/loginscreen.js
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
-
-const HARDCODED_USERNAME = 'fannosa';
-const HARDCODED_PASSWORD = 'fannosa';
+import { auth } from '../config/firebaseConfig';
 
 const LoginScreen = ({ navigation }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    if (username === HARDCODED_USERNAME && password === HARDCODED_PASSWORD) {
-      navigation.navigate('Main');
-    } else {
-      // Misslyckad inloggning
-      Alert.alert('Fel användarnamn eller lösenord. Försök igen.');
-    }
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        navigation.navigate('Main');
+      })
+      .catch((error) => {
+        Alert.alert('Fel', 'Inloggningen misslyckades. Försök igen.');
+      });
   };
 
   return (
     <View style={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder="Användarnamn"
-        value={username}
-        onChangeText={setUsername}
+        placeholder="E-post"
+        value={email}
+        onChangeText={setEmail}
       />
       <TextInput
         style={styles.input}

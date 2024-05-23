@@ -1,17 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Animated, View, TouchableOpacity } from 'react-native';
+import { auth } from './config/firebaseConfig';  // Se till att sökvägen är korrekt
+
 import HomeScreen from './components/homescreen';
 import PictureScreen from './components/picture';
 import EventsScreen from './components/events';
 import LoginScreen from './components/loginscreen';
 
 const Tab = createMaterialTopTabNavigator();
-const Stack = createStackNavigator(); // Skapa en stacknavigator
+const Stack = createStackNavigator();
 
 export default function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+    });
+    return unsubscribe;
+  }, []);
+
   const [animation] = useState(new Animated.Value(0));
 
   const handleAnimation = () => {
@@ -29,8 +40,11 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Main" component={MainTabScreen} options={{ headerShown: false }} />
+        {user ? (
+          <Stack.Screen name="Main" component={MainTabScreen} options={{ headerShown: false }} />
+        ) : (
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        )}
       </Stack.Navigator>
       <TouchableOpacity onPress={handleAnimation}>
         <View style={{ position: 'absolute', bottom: 20, right: 20 }}>
@@ -41,7 +55,6 @@ export default function App() {
   );
 }
 
-// Skapa en komponent för din huvudtabell
 function MainTabScreen() {
   return (
     <Tab.Navigator initialRouteName="Startsida" style={{ marginTop: 45 }}>

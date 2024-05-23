@@ -1,24 +1,52 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, Button } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, Button, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-
-const picturesData = [
-  { id: '1', month: 'January', uri: require('../assets/näsa.jpg') },
-  { id: '2', month: 'February', uri: require('../assets/alfons.jpg') },
-  { id: '3', month: 'March', uri: require('../assets/HEDDA2.png') },
-  // Lägg till fler bilder här
-];
+import * as ImagePicker from 'expo-image-picker';
+import { firestore, storage } from '../config/firebaseConfig';
 
 const PictureScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState('Alla bilder');
+  const [picturesData, setPicturesData] = useState([]);
+
+  useEffect(() => {
+    const fetchPictures = async () => {
+      const snapshot = await firestore.collection('pictures').get();
+      const pictures = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPicturesData(pictures);
+    };
+
+    fetchPictures();
+  }, []);
 
   const filteredPictures = selectedMonth === 'Alla bilder'
     ? picturesData
     : picturesData.filter(picture => picture.month === selectedMonth);
 
-  const uploadImage = () => {
-    // Denna funktion gör ingenting för nu, eftersom vi inte laddar upp bilder
-    console.log('Upload image button pressed');
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.cancelled) {
+      const imageUrl = await uploadImage(result.uri);
+      if (imageUrl) {
+        const newPicture = { month: selectedMonth, uri: imageUrl };
+        await firestore.collection('pictures').add(newPicture);
+        setPicturesData([...picturesData, { id: newPicture.uri, ...newPicture }]);
+      }
+    }
+  };
+
+  const uploadImage = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const ref = storage.ref().child(`images/${Date.now()}`);
+    const snapshot = await ref.put(blob);
+    const url = await snapshot.ref.getDownloadURL();
+    return url;
   };
 
   return (
@@ -35,12 +63,12 @@ const PictureScreen = () => {
         <Picker.Item label="March" value="March" />
         {/* Lägg till fler månader här */}
       </Picker>
-      <Button title="Upload Image" onPress={uploadImage} />
+      <Button title="Upload Image" onPress={pickImage} />
       <FlatList
         data={filteredPictures}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Image source={item.uri} style={styles.image} />
+          <Image source={{ uri: item.uri }} style={styles.image} />
         )}
       />
     </View>

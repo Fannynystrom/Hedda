@@ -20,6 +20,7 @@ const HomeScreen = () => {
      
       <Text style={styles.additionalText}>Apppppppp Hejhejhej </Text>
       <Text style={styles.additionalText}>Apppppppp Hejhejhejbedjdewhbdewd </Text>
+      <Text>HEJ</Text>
 
     </View>
   );
