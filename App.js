@@ -5,10 +5,10 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Animated, View, TouchableOpacity } from 'react-native';
 import { auth } from './config/firebaseConfig';  // Se till att sökvägen är korrekt
 
-import HomeScreen from './components/homescreen';
-import PictureScreen from './components/picture';
-import EventsScreen from './components/events';
-import LoginScreen from './components/loginscreen';
+import HomeScreen from './pages/homescreen';
+import PictureScreen from './pages/picture';
+import EventsScreen from './pages/events';
+import LoginScreen from './pages/loginscreen';
 
 const Tab = createMaterialTopTabNavigator();
 const Stack = createStackNavigator();
