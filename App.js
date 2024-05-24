@@ -3,12 +3,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Animated, View, TouchableOpacity } from 'react-native';
-import { auth } from './config/firebaseConfig';  // Se till att sökvägen är korrekt
+import { auth } from './config/firebaseConfig'; 
 
 import HomeScreen from './pages/homescreen';
 import PictureScreen from './pages/picture';
 import EventsScreen from './pages/events';
 import LoginScreen from './pages/loginscreen';
+import CalendarScreen from './pages/calendar'; 
+
 
 const Tab = createMaterialTopTabNavigator();
 const Stack = createStackNavigator();
@@ -61,6 +63,8 @@ function MainTabScreen() {
       <Tab.Screen name="Startsida" component={HomeScreen} />
       <Tab.Screen name="Bilder" component={PictureScreen} />
       <Tab.Screen name="Händelser" component={EventsScreen} />
+      <Tab.Screen name="Kalender" component={CalendarScreen} /> 
+
     </Tab.Navigator>
   );
 }

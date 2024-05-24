@@ -63,12 +63,12 @@ const UploadImage = () => {
 
   return (
     <View style={styles.container}>
-      <Button title="Pick an image from camera roll" onPress={pickImage} />
+      <Button title="Välj en bild från dina bilder" onPress={pickImage} />
       {image && <Image source={{ uri: image }} style={styles.image} />}
       {uploading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        <Button title="Upload Image" onPress={uploadImage} />
+        <Button title=" Ladda upp bild" onPress={uploadImage} />
       )}
     </View>
   );
