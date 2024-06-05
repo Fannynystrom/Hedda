@@ -5,7 +5,7 @@ import { firestore } from '../config/firebaseConfig';
 import UploadImage from '../components/uploadimage';
 
 const PictureScreen = () => {
-  const [selectedMonth, setSelectedMonth] = useState('Alla bilder');
+  const [selectedMonth, setSelectedMonth] = useState('');
   const [picturesData, setPicturesData] = useState([]);
 
   useEffect(() => {
@@ -21,6 +21,7 @@ const PictureScreen = () => {
     };
 
     fetchPictures();
+    setSelectedMonth(getMonthName(new Date().getMonth())); // Set initial month to the current month
   }, []);
 
   const getMonthName = (monthIndex) => {
@@ -31,15 +32,26 @@ const PictureScreen = () => {
     return months[monthIndex];
   };
 
-  const handleUploadSuccess = async (url) => {
+  const handleUploadSuccess = async (urls, caption) => {
     const date = new Date();
     const currentMonth = getMonthName(date.getMonth());
 
-    const newPicture = { month: currentMonth, uri: url };
+    const newPictures = urls.map(url => ({
+      id: `${url}-${Date.now()}`, 
+      month: currentMonth,
+      uri: url,
+      caption
+    }));
+
     try {
-      await firestore.collection('pictures').add(newPicture);
-      setPicturesData([...picturesData, { id: newPicture.uri, ...newPicture }]);
-      console.log('Picture added successfully:', newPicture);
+      const batch = firestore.batch();
+      newPictures.forEach(picture => {
+        const docRef = firestore.collection('pictures').doc();
+        batch.set(docRef, picture);
+      });
+      await batch.commit();
+      setPicturesData([...picturesData, ...newPictures]);
+      console.log('Pictures added successfully:', newPictures);
     } catch (error) {
       Alert.alert('Error', 'Failed to save picture data.');
       console.error('Error saving picture data:', error);
@@ -76,16 +88,23 @@ const PictureScreen = () => {
     </View>
   );
 
+  const renderItem = ({ item }) => (
+    <View>
+      <View style={styles.imageContainer}>
+        {item.caption && (
+          <Text style={styles.caption}>{item.caption}</Text>
+        )}
+        <Image source={{ uri: item.uri }} style={styles.image} resizeMode="contain" />
+      </View>
+    </View>
+  );
+
   return (
     <FlatList
       ListHeaderComponent={renderHeader}
       data={filteredPictures}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: item.uri }} style={styles.image} resizeMode="contain" />
-        </View>
-      )}
+      renderItem={renderItem}
       contentContainerStyle={styles.container}
     />
   );
@@ -109,12 +128,22 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 20,
   },
+  monthHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
   imageContainer: {
     width: '100%',
     height: 400, 
     marginBottom: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  caption: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    marginBottom: 5,
   },
   image: {
     width: '100%',

@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { View, Button, Image, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Button, Image, StyleSheet, ActivityIndicator, Alert, TextInput, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { storage } from '../config/firebaseConfig';
 
 const UploadImage = ({ onUploadSuccess }) => {
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [caption, setCaption] = useState('');
 
-  const pickImage = async () => {
+  const pickImages = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    console.log('Permission result:', permissionResult);
-
     if (!permissionResult.granted) {
       alert('Permission to access media library is required!');
       return;
@@ -19,79 +18,99 @@ const UploadImage = ({ onUploadSuccess }) => {
     try {
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false, // Disable cropping
+        allowsMultipleSelection: true, // Enabling multiple selection
+        allowsEditing: false,
         aspect: [4, 3],
         quality: 1,
       });
 
-      console.log('Picker result:', pickerResult);
-
-      if (!pickerResult.canceled) {
-        const pickedImageUri = pickerResult.assets[0].uri;
-        console.log('Image picked:', pickedImageUri);
-        setImage(pickedImageUri);
+      if (!pickerResult.cancelled) {
+        console.log('Images picked:', pickerResult.assets);
+        setImages(pickerResult.assets);
       } else {
         console.log('Image picking cancelled');
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      alert('Error picking image: ' + error.message);
+      console.error('Error picking images:', error);
+      alert('Error picking images: ' + error.message);
     }
   };
 
-  const uploadImage = async () => {
-    if (!image) return;
+  const uploadImages = async () => {
+    if (images.length === 0) return;
 
     try {
-      console.log('Starting upload for image:', image);
-      const response = await fetch(image);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const blob = await response.blob();
-      const ref = storage.ref().child(`images/${Date.now()}`);
-
       setUploading(true);
-      const snapshot = await ref.put(blob);
-      const url = await snapshot.ref.getDownloadURL();
+      const uploadedUrls = await Promise.all(images.map(async (image) => {
+        console.log('Uploading image:', image.uri);
+        const response = await fetch(image.uri);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const blob = await response.blob();
+        const ref = storage.ref().child(`images/${Date.now()}-${image.uri.split('/').pop()}`);
+        const snapshot = await ref.put(blob);
+        const url = await snapshot.ref.getDownloadURL();
+        console.log('Uploaded image URL:', url);
+        return url;
+      }));
 
-      console.log('Image uploaded successfully! URL:', url);
       setUploading(false);
-      alert('Image uploaded successfully! URL: ' + url);
-      setImage(null);
-      onUploadSuccess(url);
+      setImages([]);
+      setCaption('');
+      onUploadSuccess(uploadedUrls, caption);
     } catch (error) {
       setUploading(false);
       alert('Image upload failed: ' + error.message);
-      console.error('Error uploading image:', error);
+      console.error('Error uploading images:', error);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Button title="Pick an image from camera roll" onPress={pickImage} />
-      {image && <Image source={{ uri: image }} style={styles.image} />}
+    <ScrollView style={styles.container}>
+      <Button title="Pick images from camera roll" onPress={pickImages} />
+      {images.length > 0 && (
+        <ScrollView horizontal>
+          {images.map((image, index) => (
+            <Image key={index} source={{ uri: image.uri }} style={styles.image} />
+          ))}
+        </ScrollView>
+      )}
+      <TextInput
+        style={styles.input}
+        placeholder="Enter caption (optional)"
+        value={caption}
+        onChangeText={setCaption}
+      />
       {uploading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        <Button title="Upload Image" onPress={uploadImage} />
+        <Button title="Upload Images" onPress={uploadImages} />
       )}
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: 'white',
   },
   image: {
-    width: 200,
-    height: 200,
-    marginTop: 20,
+    width: 100,
+    height: 100,
+    marginRight: 10,
+    marginTop: 10,
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    marginTop: 10,
   },
 });
 
 export default UploadImage;
-

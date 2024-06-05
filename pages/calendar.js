@@ -105,31 +105,31 @@ const CalendarScreen = () => {
               )}
             />
           ) : (
-            <Text>No events for this day.</Text>
+            <Text>Inga händelser denna dag.</Text>
           )}
         </View>
       ) : (
-        <Text>Select a date to see events.</Text>
+        <Text>Välj ett datum för att se händelser.</Text>
       )}
       <TextInput
         style={styles.input}
-        placeholder="Event title"
+        placeholder="Skriv en titel för händelsen"
         value={eventTitle}
         onChangeText={setEventTitle}
       />
       <TextInput
         style={styles.input}
-        placeholder="Event time (HH:MM)"
+        placeholder="Välj en tid för händelsen (HH:MM)"
         value={eventTime}
         onChangeText={setEventTime}
       />
       <TextInput
         style={styles.input}
-        placeholder="Event details"
+        placeholder="Beskrivning"
         value={eventText}
         onChangeText={setEventText}
       />
-      <Button title="Add Event" onPress={handleAddEvent} />
+      <Button title="Lägg till event" onPress={handleAddEvent} />
     </View>
   );
 };
