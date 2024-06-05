@@ -1,6 +1,6 @@
 // pages/CalendarScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, TextInput, StyleSheet, FlatList, Alert, Platform } from 'react-native';
+import { View, Text, Button, TextInput, StyleSheet, FlatList, Alert } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { firestore } from '../config/firebaseConfig';
 
@@ -89,6 +89,28 @@ const CalendarScreen = () => {
           return acc;
         }, {})}
       />
+      {selectedDate ? (
+        <View>
+          <Text style={styles.dateTitle}>{`Events for ${selectedDate}`}</Text>
+          {events[selectedDate] && events[selectedDate].events.length > 0 ? (
+            <FlatList
+              data={events[selectedDate].events}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={styles.eventItem}>
+                  <Text style={styles.eventTitle}>{item.title}</Text>
+                  <Text>{item.time}</Text>
+                  <Text>{item.text}</Text>
+                </View>
+              )}
+            />
+          ) : (
+            <Text>No events for this day.</Text>
+          )}
+        </View>
+      ) : (
+        <Text>Select a date to see events.</Text>
+      )}
       <TextInput
         style={styles.input}
         placeholder="Event title"
@@ -108,19 +130,6 @@ const CalendarScreen = () => {
         onChangeText={setEventText}
       />
       <Button title="Add Event" onPress={handleAddEvent} />
-      {selectedDate && events[selectedDate] && (
-        <FlatList
-          data={events[selectedDate].events}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.eventItem}>
-              <Text style={styles.eventTitle}>{item.title}</Text>
-              <Text>{item.time}</Text>
-              <Text>{item.text}</Text>
-            </View>
-          )}
-        />
-      )}
     </View>
   );
 };
@@ -131,17 +140,25 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: 'white',
   },
+  dateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    marginTop: 30,
+
+  },
   input: {
     height: 40,
     borderColor: 'gray',
     borderWidth: 1,
     marginBottom: 10,
+    marginTop: 10,
     paddingHorizontal: 10,
   },
   eventItem: {
     padding: 10,
     borderBottomColor: 'gray',
-    borderBottomWidth: 1,
+    marginBottom: 20,
   },
   eventTitle: {
     fontWeight: 'bold',

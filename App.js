@@ -61,8 +61,7 @@ function MainTabScreen() {
   return (
     <Tab.Navigator initialRouteName="Startsida" style={{ marginTop: 45 }}>
       <Tab.Screen name="Startsida" component={HomeScreen} />
-      <Tab.Screen name="Bilder" component={PictureScreen} />
-      <Tab.Screen name="Händelser" component={EventsScreen} />
+      <Tab.Screen name="Bilddagbok" component={PictureScreen} />
       <Tab.Screen name="Kalender" component={CalendarScreen} /> 
 
     </Tab.Navigator>

@@ -1,41 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Button, Image, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { storage, auth } from '../config/firebaseConfig';
+import { storage } from '../config/firebaseConfig';
 
-const UploadImage = () => {
+const UploadImage = ({ onUploadSuccess }) => {
   const [image, setImage] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission to access media library is required!');
-      }
-    })();
-  }, []);
-
   const pickImage = async () => {
-    if (!auth.currentUser) {
-      Alert.alert('Error', 'You must be logged in to upload images.');
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    console.log('Permission result:', permissionResult);
+
+    if (!permissionResult.granted) {
+      alert('Permission to access media library is required!');
       return;
     }
 
     try {
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
+        allowsEditing: false, // Disable cropping
         aspect: [4, 3],
         quality: 1,
       });
 
-      if (!pickerResult.cancelled) {
-        setImage(pickerResult.uri);
+      console.log('Picker result:', pickerResult);
+
+      if (!pickerResult.canceled) {
+        const pickedImageUri = pickerResult.assets[0].uri;
+        console.log('Image picked:', pickedImageUri);
+        setImage(pickedImageUri);
+      } else {
+        console.log('Image picking cancelled');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image: ' + error.message);
       console.error('Error picking image:', error);
+      alert('Error picking image: ' + error.message);
     }
   };
 
@@ -43,7 +43,11 @@ const UploadImage = () => {
     if (!image) return;
 
     try {
+      console.log('Starting upload for image:', image);
       const response = await fetch(image);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
       const blob = await response.blob();
       const ref = storage.ref().child(`images/${Date.now()}`);
 
@@ -51,24 +55,26 @@ const UploadImage = () => {
       const snapshot = await ref.put(blob);
       const url = await snapshot.ref.getDownloadURL();
 
+      console.log('Image uploaded successfully! URL:', url);
       setUploading(false);
       alert('Image uploaded successfully! URL: ' + url);
       setImage(null);
+      onUploadSuccess(url);
     } catch (error) {
       setUploading(false);
-      Alert.alert('Error', 'Image upload failed: ' + error.message);
+      alert('Image upload failed: ' + error.message);
       console.error('Error uploading image:', error);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Button title="Välj en bild från dina bilder" onPress={pickImage} />
+      <Button title="Pick an image from camera roll" onPress={pickImage} />
       {image && <Image source={{ uri: image }} style={styles.image} />}
       {uploading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        <Button title=" Ladda upp bild" onPress={uploadImage} />
+        <Button title="Upload Image" onPress={uploadImage} />
       )}
     </View>
   );
@@ -88,3 +94,4 @@ const styles = StyleSheet.create({
 });
 
 export default UploadImage;
+
