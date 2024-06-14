@@ -1,27 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, Alert, TouchableOpacity, Button } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { firestore } from '../config/firebaseConfig';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { firestore, storage } from '../config/firebaseConfig';
 import UploadImage from '../components/uploadimage';
 
 const PictureScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [picturesData, setPicturesData] = useState([]);
+  const [captionVisible, setCaptionVisible] = useState(true);
+
+  const fetchPictures = async () => {
+    try {
+      const snapshot = await firestore.collection('pictures').get();
+      const pictures = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(picture => !picture.id.startsWith('http')); // filtrerar ut ogiltliga id
+      console.log('Fetched pictures:', pictures);
+      setPicturesData(pictures);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch pictures.');
+      console.error('Error fetching pictures:', error);
+    }
+  };
+  
+  
 
   useEffect(() => {
-    const fetchPictures = async () => {
-      try {
-        const snapshot = await firestore.collection('pictures').get();
-        const pictures = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setPicturesData(pictures);
-      } catch (error) {
-        Alert.alert('Error', 'Failed to fetch pictures.');
-        console.error('Error fetching pictures:', error);
-      }
-    };
-
     fetchPictures();
-    setSelectedMonth(getMonthName(new Date().getMonth())); // Set initial month to the current month
+    setSelectedMonth(getMonthName(new Date().getMonth())); // sätter aktuell månad 
   }, []);
 
   const getMonthName = (monthIndex) => {
@@ -35,26 +42,108 @@ const PictureScreen = () => {
   const handleUploadSuccess = async (urls, caption) => {
     const date = new Date();
     const currentMonth = getMonthName(date.getMonth());
-
-    const newPictures = urls.map(url => ({
-      id: `${url}-${Date.now()}`, 
-      month: currentMonth,
-      uri: url,
-      caption
-    }));
-
+  
     try {
       const batch = firestore.batch();
-      newPictures.forEach(picture => {
-        const docRef = firestore.collection('pictures').doc();
-        batch.set(docRef, picture);
+      urls.forEach(url => {
+        const docRef = firestore.collection('pictures').doc(); // genererar ett unikt id
+        const newPicture = {
+          month: currentMonth,
+          uri: url,
+          caption,
+        };
+        batch.set(docRef, newPicture);
       });
       await batch.commit();
-      setPicturesData([...picturesData, ...newPictures]);
-      console.log('Pictures added successfully:', newPictures);
+  
+      // hämtar uppdateringar från firebase
+      fetchPictures();
+  
+      console.log('Pictures added successfully');
     } catch (error) {
       Alert.alert('Error', 'Failed to save picture data.');
       console.error('Error saving picture data:', error);
+    }
+  };
+  
+//BILDER
+  const handleDeletePicture = async (id, uri) => {
+    Alert.alert(
+      'Bekräfta borttagning',
+      'Vill du radera bilden?',
+      [
+        {
+          text: 'Nej',
+          style: 'cancel',
+        },
+        {
+          text: 'Ja',
+          onPress: async () => {
+            try {
+              if (!id || id.startsWith('http')) {
+                throw new Error(`Invalid document ID: ${id}`);
+              }
+              console.log(`Trying to delete picture with id: ${id} and uri: ${uri}`);
+  
+              // kontrollerar om bilden finns i firebase
+              const docRef = firestore.collection('pictures').doc(id);
+              const doc = await docRef.get();
+              if (!doc.exists) {
+                throw new Error(`Document does not exist: ${id}`);
+              }
+  
+              // filnamnet från url
+              const fileName = decodeURIComponent(uri.split('/o/')[1].split('?')[0]);
+              const imageRef = storage.ref().child(fileName);
+  
+              // raderar i storage 
+              await imageRef.delete();
+              console.log(`Deleted picture from Storage with uri: ${uri}`);
+  
+              // raderar i firebase
+              await docRef.delete();
+              console.log(`Deleted picture from Firestore with id: ${id}`);
+  
+              // uppdaterar
+              fetchPictures();
+              Alert.alert('Success', 'Picture deleted successfully.');
+            } catch (error) {
+              Alert.alert('Error', error.message);
+              console.error('Error deleting picture:', error.message);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+  
+  
+//BILDTEXT
+  const handleDeleteCaption = async (id) => {
+    try {
+      if (!id || id.startsWith('http')) {
+        throw new Error(`Invalid document ID: ${id}`);
+      }
+      console.log(`Trying to delete caption for picture with id: ${id}`);
+
+      // kontrollerar bildtexten finns i firebase
+      const docRef = firestore.collection('pictures').doc(id);
+      const doc = await docRef.get();
+      if (!doc.exists) {
+        throw new Error(`Document does not exist: ${id}`);
+      }
+
+      // uppdaterar firebase
+      await docRef.update({ caption: '' });
+      console.log(`Caption deleted for picture with id: ${id}`);
+
+      // uppdaterar
+      fetchPictures();
+      Alert.alert('Success', 'Caption deleted successfully.');
+    } catch (error) {
+      Alert.alert('Error', error.message);
+      console.error('Error deleting caption:', error.message);
     }
   };
 
@@ -88,16 +177,26 @@ const PictureScreen = () => {
     </View>
   );
 
-  const renderItem = ({ item }) => (
-    <View>
+  const renderItem = ({ item, index }) => {
+    console.log('Rendering item:', item);
+    return (
       <View style={styles.imageContainer}>
-        {item.caption && (
-          <Text style={styles.caption}>{item.caption}</Text>
+        {index === 0 && item.caption && (
+          <View style={styles.captionContainer}>
+            <Text style={styles.caption}>{item.caption}</Text>
+            <Button title="Ta bort text" onPress={() => handleDeleteCaption(item.id)} />
+          </View>
         )}
         <Image source={{ uri: item.uri }} style={styles.image} resizeMode="contain" />
+        <TouchableOpacity
+          style={styles.deleteIcon}
+          onPress={() => handleDeletePicture(item.id, item.uri)}
+        >
+          <Icon name="close" size={24} color="red" />
+        </TouchableOpacity>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <FlatList
@@ -128,26 +227,38 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 20,
   },
-  monthHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
   imageContainer: {
     width: '100%',
-    height: 400, 
+    height: 400,
     marginBottom: 20,
     justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  captionContainer: {
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 5,
+    marginBottom: 10,
+    width: '100%',
     alignItems: 'center',
   },
   caption: {
     fontSize: 16,
     fontStyle: 'italic',
-    marginBottom: 5,
   },
   image: {
     width: '100%',
     height: '100%',
+    margin: 10,
+  },
+  deleteIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
+    padding: 5,
   },
 });
 

@@ -18,7 +18,7 @@ const UploadImage = ({ onUploadSuccess }) => {
     try {
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true, // Enabling multiple selection
+        allowsMultipleSelection: true, // aktiverar flera val
         allowsEditing: false,
         aspect: [4, 3],
         quality: 1,
