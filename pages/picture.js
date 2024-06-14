@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, Alert, TouchableOpacity, Button } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, Alert, TouchableOpacity, TextInput, Button } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { firestore, storage } from '../config/firebaseConfig';
@@ -8,14 +8,14 @@ import UploadImage from '../components/uploadimage';
 const PictureScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [picturesData, setPicturesData] = useState([]);
-  const [captionVisible, setCaptionVisible] = useState(true);
+  const [caption, setCaption] = useState('');
+  const [editingCaption, setEditingCaption] = useState(false);
+  const [newCaption, setNewCaption] = useState('');
 
   const fetchPictures = async () => {
     try {
       const snapshot = await firestore.collection('pictures').get();
-      const pictures = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(picture => !picture.id.startsWith('http')); // filtrerar ut ogiltliga id
+      const pictures = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       console.log('Fetched pictures:', pictures);
       setPicturesData(pictures);
     } catch (error) {
@@ -23,8 +23,6 @@ const PictureScreen = () => {
       console.error('Error fetching pictures:', error);
     }
   };
-  
-  
 
   useEffect(() => {
     fetchPictures();
@@ -58,6 +56,7 @@ const PictureScreen = () => {
   
       // hämtar uppdateringar från firebase
       fetchPictures();
+      setCaption(caption);
   
       console.log('Pictures added successfully');
     } catch (error) {
@@ -65,8 +64,8 @@ const PictureScreen = () => {
       console.error('Error saving picture data:', error);
     }
   };
-  
-//BILDER
+
+  // BILDER
   const handleDeletePicture = async (id, uri) => {
     Alert.alert(
       'Bekräfta borttagning',
@@ -117,33 +116,47 @@ const PictureScreen = () => {
       { cancelable: true }
     );
   };
-  
-  
-//BILDTEXT
-  const handleDeleteCaption = async (id) => {
+
+  // BILDTEXT
+  const handleDeleteCaption = async () => {
     try {
-      if (!id || id.startsWith('http')) {
-        throw new Error(`Invalid document ID: ${id}`);
-      }
-      console.log(`Trying to delete caption for picture with id: ${id}`);
+      const batch = firestore.batch();
+      const snapshot = await firestore.collection('pictures').where('caption', '==', caption).get();
+      snapshot.forEach(doc => {
+        batch.update(doc.ref, { caption: '' });
+      });
+      await batch.commit();
 
-      // kontrollerar bildtexten finns i firebase
-      const docRef = firestore.collection('pictures').doc(id);
-      const doc = await docRef.get();
-      if (!doc.exists) {
-        throw new Error(`Document does not exist: ${id}`);
-      }
-
-      // uppdaterar firebase
-      await docRef.update({ caption: '' });
-      console.log(`Caption deleted for picture with id: ${id}`);
-
-      // uppdaterar
+      setCaption('');
       fetchPictures();
       Alert.alert('Success', 'Caption deleted successfully.');
     } catch (error) {
-      Alert.alert('Error', error.message);
-      console.error('Error deleting caption:', error.message);
+      Alert.alert('Error', 'Failed to delete caption.');
+      console.error('Error deleting caption:', error);
+    }
+  };
+
+  const handleEditCaption = () => {
+    setEditingCaption(true);
+    setNewCaption(caption);
+  };
+
+  const handleSaveCaption = async () => {
+    try {
+      const batch = firestore.batch();
+      const snapshot = await firestore.collection('pictures').where('caption', '==', caption).get();
+      snapshot.forEach(doc => {
+        batch.update(doc.ref, { caption: newCaption });
+      });
+      await batch.commit();
+
+      setCaption(newCaption);
+      setEditingCaption(false);
+      fetchPictures();
+      Alert.alert('Success', 'Caption updated successfully.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update caption.');
+      console.error('Error updating caption:', error);
     }
   };
 
@@ -177,26 +190,37 @@ const PictureScreen = () => {
     </View>
   );
 
-  const renderItem = ({ item, index }) => {
-    console.log('Rendering item:', item);
-    return (
-      <View style={styles.imageContainer}>
-        {index === 0 && item.caption && (
-          <View style={styles.captionContainer}>
-            <Text style={styles.caption}>{item.caption}</Text>
-            <Button title="Ta bort text" onPress={() => handleDeleteCaption(item.id)} />
-          </View>
-        )}
-        <Image source={{ uri: item.uri }} style={styles.image} resizeMode="contain" />
-        <TouchableOpacity
-          style={styles.deleteIcon}
-          onPress={() => handleDeletePicture(item.id, item.uri)}
-        >
-          <Icon name="close" size={24} color="red" />
-        </TouchableOpacity>
-      </View>
-    );
-  };
+  const renderItem = ({ item, index }) => (
+    <View style={styles.imageContainer}>
+      {index === 0 && caption && (
+        <View style={styles.captionContainer}>
+          {editingCaption ? (
+            <>
+              <TextInput
+                style={styles.captionInput}
+                value={newCaption}
+                onChangeText={setNewCaption}
+              />
+              <Button title="Spara" onPress={handleSaveCaption} />
+            </>
+          ) : (
+            <>
+              <Text style={styles.caption}>{caption}</Text>
+              <Button title="Redigera text" onPress={handleEditCaption} />
+            </>
+          )}
+          <Button title="Ta bort text" onPress={handleDeleteCaption} />
+        </View>
+      )}
+      <Image source={{ uri: item.uri }} style={styles.image} resizeMode="contain" />
+      <TouchableOpacity
+        style={styles.deleteIcon}
+        onPress={() => handleDeletePicture(item.id, item.uri)}
+      >
+        <Icon name="close" size={24} color="red" />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <FlatList
@@ -229,10 +253,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 400,
     marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
     position: 'relative',
   },
   captionContainer: {
@@ -243,14 +264,20 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
+  captionInput: {
+    fontSize: 16,
+    borderColor: 'gray',
+    borderWidth: 1,
+    padding: 5,
+    width: '100%',
+  },
   caption: {
     fontSize: 16,
     fontStyle: 'italic',
   },
   image: {
     width: '100%',
-    height: '100%',
-    margin: 10,
+    height: 400,
   },
   deleteIcon: {
     position: 'absolute',
