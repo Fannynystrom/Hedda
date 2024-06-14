@@ -1,20 +1,51 @@
-// components/loginscreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../config/firebaseConfig';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => {
-        navigation.navigate('Main');
-      })
-      .catch((error) => {
-        Alert.alert('Fel', 'Inloggningen misslyckades. Försök igen.');
-      });
+  useEffect(() => {
+    const loadCredentials = async () => {
+      try {
+        const storedEmail = await AsyncStorage.getItem('email');
+        const storedPassword = await AsyncStorage.getItem('password');
+        if (storedEmail && storedPassword) {
+          setEmail(storedEmail);
+          setPassword(storedPassword);
+        }
+      } catch (error) {
+        console.error('Error loading credentials', error);
+      }
+    };
+
+    loadCredentials();
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      navigation.navigate('Main');
+
+      // Spara användarnamn och lösenord om "komma ihåg" är aktiverat
+      await AsyncStorage.setItem('email', email);
+      await AsyncStorage.setItem('password', password);
+    } catch (error) {
+      Alert.alert('Fel', 'Inloggningen misslyckades. Försök igen.');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      await AsyncStorage.removeItem('email');
+      await AsyncStorage.removeItem('password');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Error logging out', error);
+    }
   };
 
   return (
