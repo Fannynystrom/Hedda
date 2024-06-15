@@ -4,6 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { firestore, storage } from '../config/firebaseConfig';
 import UploadImage from '../components/uploadimage';
+//import { ClientRequest } from 'http';
 
 const PictureScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -177,29 +178,35 @@ const PictureScreen = () => {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      <Text style={styles.title}>Bilder</Text>
+          <Text style={styles.title}>Bilddagbok</Text>
+
       <Picker
         selectedValue={selectedMonth}
         onValueChange={(itemValue) => setSelectedMonth(itemValue)}
         style={styles.picker}
+        
       >
-        <Picker.Item label="Alla bilder" value="Alla bilder" />
-        <Picker.Item label="Januari" value="Januari" />
-        <Picker.Item label="Februari" value="Februari" />
-        <Picker.Item label="Mars" value="Mars" />
-        <Picker.Item label="April" value="April" />
-        <Picker.Item label="Maj" value="Maj" />
-        <Picker.Item label="Juni" value="Juni" />
-        <Picker.Item label="Juli" value="Juli" />
-        <Picker.Item label="Augusti" value="Augusti" />
-        <Picker.Item label="September" value="September" />
-        <Picker.Item label="Oktober" value="Oktober" />
-        <Picker.Item label="November" value="November" />
-        <Picker.Item label="December" value="December" />
-      </Picker>
-      <UploadImage onUploadSuccess={handleUploadSuccess} />
-    </View>
-  );
+        
+       <Picker.Item label="Alla bilder" value="Alla bilder" />
+      <Picker.Item label="Januari" value="Januari" style={selectedMonth === 'Januari' && styles.selectedMonthText} />
+      <Picker.Item label="Februari" value="Februari" style={selectedMonth === 'Februari' && styles.selectedMonthText} />
+      <Picker.Item label="Mars" value="Mars" style={selectedMonth === 'Mars' && styles.selectedMonthText} />
+      <Picker.Item label="April" value="April" style={selectedMonth === 'April' && styles.selectedMonthText} />
+      <Picker.Item label="Maj" value="Maj" style={selectedMonth === 'Maj' && styles.selectedMonthText} />
+      <Picker.Item label="Juni" value="Juni" style={selectedMonth === 'Juni' && styles.selectedMonthText} />
+      <Picker.Item label="Juli" value="Juli" style={selectedMonth === 'Juli' && styles.selectedMonthText} />
+      <Picker.Item label="Augusti" value="Augusti" style={selectedMonth === 'Augusti' && styles.selectedMonthText} />
+      <Picker.Item label="September" value="September" style={selectedMonth === 'September' && styles.selectedMonthText} />
+      <Picker.Item label="Oktober" value="Oktober" style={selectedMonth === 'Oktober' && styles.selectedMonthText} />
+      <Picker.Item label="November" value="November" style={selectedMonth === 'November' && styles.selectedMonthText} />
+      <Picker.Item label="December" value="December" style={selectedMonth === 'December' && styles.selectedMonthText} />
+    </Picker>
+
+    <UploadImage onUploadSuccess={handleUploadSuccess} />
+    
+  </View>
+  
+);
 
   const renderItem = ({ item }) => {
     const firstPicture = item[0];
@@ -274,18 +281,27 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: 'white',
   },
+selectedMonthText: {
+  fontSize: 20, 
+  fontWeight: 'bold',
+  color: 'black',
+},
+
   headerContainer: {
     marginBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 29,
     fontWeight: 'bold',
     marginBottom: 20,
+    marginTop: 10,
+    marginLeft: 110,
   },
   picker: {
     height: 50,
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 2,
+    backgroundColor: '#daf6f7',
   },
   postContainer: {
     borderWidth: 1,
@@ -356,7 +372,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   button: {
-    backgroundColor: '#b7ebed',
+    backgroundColor: '#daf6f7',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 5,

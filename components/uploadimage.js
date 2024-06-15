@@ -73,13 +73,13 @@ const UploadImage = ({ onUploadSuccess }) => {
       )}
       <TextInput
         style={styles.input}
-        placeholder="Enter caption (optional)"
+        placeholder="Skriv en text till ditt inlägg (frivilligt)"
         value={caption}
         onChangeText={setCaption}
       />
       <TextInput
         style={styles.input}
-        placeholder="Enter your name"
+        placeholder="Skriv ditt namn"
         value={creator}
         onChangeText={setCreator}
       />
