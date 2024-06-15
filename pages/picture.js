@@ -356,14 +356,14 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   button: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#b7ebed',
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 5,
     marginHorizontal: 5, // margin mellan knappar
   },
   buttonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 14,
   },
 });

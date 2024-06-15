@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Button, Image, StyleSheet, ActivityIndicator, Alert, TextInput, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, ActivityIndicator, Alert, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { storage } from '../config/firebaseConfig';
 
@@ -61,7 +61,9 @@ const UploadImage = ({ onUploadSuccess }) => {
 
   return (
     <ScrollView style={styles.container}>
-      <Button title="Pick images from camera roll" onPress={pickImages} />
+      <TouchableOpacity style={styles.button} onPress={pickImages}>
+        <Text style={styles.buttonText}>Välj bilder från kamerarulle</Text>
+      </TouchableOpacity>
       {images.length > 0 && (
         <ScrollView horizontal>
           {images.map((image, index) => (
@@ -84,7 +86,9 @@ const UploadImage = ({ onUploadSuccess }) => {
       {uploading ? (
         <ActivityIndicator size="large" color="#0000ff" />
       ) : (
-        <Button title="Upload Images" onPress={uploadImages} />
+        <TouchableOpacity style={styles.button} onPress={uploadImages}>
+          <Text style={styles.buttonText}>Ladda upp inlägg</Text>
+        </TouchableOpacity>
       )}
     </ScrollView>
   );
@@ -101,6 +105,19 @@ const styles = StyleSheet.create({
     height: 100,
     marginRight: 10,
     marginTop: 10,
+  },
+  button: {
+    backgroundColor: '#b7ebed',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginHorizontal: 5,
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'black',
+    fontWeight: 'bold',
   },
   input: {
     height: 40,
