@@ -215,15 +215,28 @@ const PictureScreen = () => {
                 value={newCaption}
                 onChangeText={setNewCaption}
               />
-              <Button title="Spara" onPress={handleSaveCaption} />
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.button} onPress={handleSaveCaption}>
+                  <Text style={styles.buttonText}>Spara</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={handleEditCaption}>
+                  <Text style={styles.buttonText}>Redigera text</Text>
+                </TouchableOpacity>
+              </View>
             </>
           ) : (
             <>
               <Text style={styles.caption}>{caption}</Text>
-              <Button title="Redigera text" onPress={handleEditCaption} />
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.button} onPress={handleEditCaption}>
+                  <Text style={styles.buttonText}>Redigera text</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={handleDeleteCaption}>
+                  <Text style={styles.buttonText}>Ta bort text</Text>
+                </TouchableOpacity>
+              </View>
             </>
           )}
-          <Button title="Ta bort text" onPress={handleDeleteCaption} />
         </View>
         {images.map((uri, index) => (
           <View key={index} style={styles.imageContainer}>
@@ -243,6 +256,7 @@ const PictureScreen = () => {
       </View>
     );
   };
+  
 
   return (
     <FlatList
@@ -305,6 +319,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 5,
     width: '100%',
+    marginBottom: 10,
   },
   caption: {
     fontSize: 16,
@@ -334,6 +349,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 5,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginHorizontal: 5, // margin mellan knappar
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 14,
+  },
 });
 
 export default PictureScreen;
+
