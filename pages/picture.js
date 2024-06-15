@@ -37,7 +37,7 @@ const PictureScreen = () => {
     return months[monthIndex];
   };
 
-  const handleUploadSuccess = async (urls, caption) => {
+  const handleUploadSuccess = async (urls, caption, creator) => {
     const date = new Date();
     const currentMonth = getMonthName(date.getMonth());
   
@@ -49,6 +49,8 @@ const PictureScreen = () => {
           month: currentMonth,
           uri: url,
           caption,
+          creator: creator || 'Anonym', // Om namnet inte är ifyllt, använd "Anonym"
+          date: date.toLocaleDateString(),
         };
         batch.set(docRef, newPicture);
       });
@@ -164,6 +166,15 @@ const PictureScreen = () => {
     ? picturesData
     : picturesData.filter(picture => picture.month === selectedMonth);
 
+  const groupedPictures = filteredPictures.reduce((acc, picture) => {
+    const key = `${picture.caption}-${picture.creator}-${picture.date}`;
+    if (!acc[key]) {
+      acc[key] = [];
+    }
+    acc[key].push(picture);
+    return acc;
+  }, {});
+
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <Text style={styles.title}>Bilder</Text>
@@ -190,9 +201,12 @@ const PictureScreen = () => {
     </View>
   );
 
-  const renderItem = ({ item, index }) => (
-    <View style={styles.imageContainer}>
-      {index === 0 && caption && (
+  const renderItem = ({ item }) => {
+    const firstPicture = item[0];
+    const { date, caption, creator } = firstPicture;
+    const images = item.map(picture => picture.uri);
+    return (
+      <View style={styles.postContainer}>
         <View style={styles.captionContainer}>
           {editingCaption ? (
             <>
@@ -211,22 +225,30 @@ const PictureScreen = () => {
           )}
           <Button title="Ta bort text" onPress={handleDeleteCaption} />
         </View>
-      )}
-      <Image source={{ uri: item.uri }} style={styles.image} resizeMode="contain" />
-      <TouchableOpacity
-        style={styles.deleteIcon}
-        onPress={() => handleDeletePicture(item.id, item.uri)}
-      >
-        <Icon name="close" size={24} color="red" />
-      </TouchableOpacity>
-    </View>
-  );
+        {images.map((uri, index) => (
+          <View key={index} style={styles.imageContainer}>
+            <Image source={{ uri }} style={styles.image} resizeMode="contain" />
+            <TouchableOpacity
+              style={styles.deleteIcon}
+              onPress={() => handleDeletePicture(firstPicture.id, uri)}
+            >
+              <Icon name="close" size={24} color="red" />
+            </TouchableOpacity>
+          </View>
+        ))}
+        <View style={styles.footer}>
+          <Text style={styles.creator}>Skapad av: {creator}</Text>
+          <Text style={styles.date}>Datum: {date}</Text>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <FlatList
       ListHeaderComponent={renderHeader}
-      data={filteredPictures}
-      keyExtractor={(item) => item.id}
+      data={Object.values(groupedPictures)}
+      keyExtractor={(item) => item[0].id}
       renderItem={renderItem}
       contentContainerStyle={styles.container}
     />
@@ -250,6 +272,19 @@ const styles = StyleSheet.create({
     height: 50,
     width: '100%',
     marginBottom: 20,
+  },
+  postContainer: {
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
   },
   imageContainer: {
     width: '100%',
@@ -278,6 +313,18 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 400,
+  },
+  footer: {
+    marginTop: 10,
+    alignItems: 'flex-start',
+  },
+  creator: {
+    fontSize: 14,
+    color: 'gray',
+  },
+  date: {
+    fontSize: 14,
+    color: 'gray',
   },
   deleteIcon: {
     position: 'absolute',

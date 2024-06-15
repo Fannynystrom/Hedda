@@ -7,6 +7,7 @@ const UploadImage = ({ onUploadSuccess }) => {
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [caption, setCaption] = useState('');
+  const [creator, setCreator] = useState('');
 
   const pickImages = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -18,17 +19,14 @@ const UploadImage = ({ onUploadSuccess }) => {
     try {
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: true, // aktiverar flera val
+        allowsMultipleSelection: true,
         allowsEditing: false,
         aspect: [4, 3],
         quality: 1,
       });
 
       if (!pickerResult.cancelled) {
-        console.log('Images picked:', pickerResult.assets);
         setImages(pickerResult.assets);
-      } else {
-        console.log('Image picking cancelled');
       }
     } catch (error) {
       console.error('Error picking images:', error);
@@ -42,23 +40,18 @@ const UploadImage = ({ onUploadSuccess }) => {
     try {
       setUploading(true);
       const uploadedUrls = await Promise.all(images.map(async (image) => {
-        console.log('Uploading image:', image.uri);
         const response = await fetch(image.uri);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
         const blob = await response.blob();
         const ref = storage.ref().child(`images/${Date.now()}-${image.uri.split('/').pop()}`);
         const snapshot = await ref.put(blob);
-        const url = await snapshot.ref.getDownloadURL();
-        console.log('Uploaded image URL:', url);
-        return url;
+        return await snapshot.ref.getDownloadURL();
       }));
 
       setUploading(false);
       setImages([]);
       setCaption('');
-      onUploadSuccess(uploadedUrls, caption);
+      setCreator('');
+      onUploadSuccess(uploadedUrls, caption, creator);
     } catch (error) {
       setUploading(false);
       alert('Image upload failed: ' + error.message);
@@ -81,6 +74,12 @@ const UploadImage = ({ onUploadSuccess }) => {
         placeholder="Enter caption (optional)"
         value={caption}
         onChangeText={setCaption}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter your name"
+        value={creator}
+        onChangeText={setCreator}
       />
       {uploading ? (
         <ActivityIndicator size="large" color="#0000ff" />
