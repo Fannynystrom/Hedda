@@ -31,9 +31,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 0,
-        paddingTop: 10, 
+        paddingTop: 0, 
         marginTop: 0,
-        backgroundColor: 'rgb(245, 245, 240)',
+        backgroundColor: '#add8e6',
       },
   title: {
     fontSize: 20,
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   },
 
   Image: {
-    width: 445, 
+    width: 400, 
     height: 395,
     
 },
