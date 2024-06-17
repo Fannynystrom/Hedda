@@ -1,49 +1,37 @@
 // components/HomeScreen.js
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Header from '../assets/RubrikImage.png'
-
 
 const HomeScreen = () => {
-  
   const navigation = useNavigation();
 
-  
-
   return (
-    
-    <View style={styles.container}>
-<Image style={styles.Image} source={require("../assets/Header.png")} />
+    <ScrollView contentContainerStyle={styles.container}>
+      <Image style={styles.image} source={require("../assets/Header.png")} />
+      <Image style={styles.image} source={require("../assets/11.png")} />
+      <Image style={styles.image} source={require("../assets/12.png")} />
 
-      <Text style={styles.title}>App!</Text>
-     
-      <Text style={styles.additionalText}>Apppppppp Hejhejhej </Text>
-      <Text style={styles.additionalText}>Apppppppp Hejhejhejbedjdewhbdewd </Text>
-      <Text>HEJ</Text>
-
-    </View>
+      <Text style={styles.additionalText}>HEJ</Text>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 0,
-        paddingTop: 0, 
-        marginTop: 0,
-        backgroundColor: '#add8e6',
-      },
+  container: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 0,
+    paddingTop: 0, 
+    marginTop: 0,
+    backgroundColor: '#add8e6',
+  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
     marginTop: 40,
   },
-
-
-
   additionalText: {
     fontSize: 17,
     marginTop: 40,
@@ -51,12 +39,11 @@ const styles = StyleSheet.create({
     color: 'black',
     padding: 10,
   },
-
-  Image: {
+  image: {
     width: 400, 
     height: 395,
-    
-},
+    marging: 20,
+  },
 });
 
 export default HomeScreen;

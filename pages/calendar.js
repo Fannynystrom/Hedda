@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, TextInput, StyleSheet, FlatList, Alert, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, Button, TextInput, StyleSheet, FlatList, Alert, Modal, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { firestore } from '../config/firebaseConfig';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 LocaleConfig.locales['sv'] = {
   monthNames: ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni', 'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'],
@@ -16,11 +17,12 @@ LocaleConfig.defaultLocale = 'sv';
 const CalendarScreen = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [eventTitle, setEventTitle] = useState('');
-  const [eventTime, setEventTime] = useState('');
+  const [eventTime, setEventTime] = useState(new Date());
   const [eventText, setEventText] = useState('');
   const [events, setEvents] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
   const [showEventForm, setShowEventForm] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -50,7 +52,7 @@ const CalendarScreen = () => {
       return;
     }
 
-    const newEvent = { date: selectedDate, title: eventTitle, time: eventTime, text: eventText };
+    const newEvent = { date: selectedDate, title: eventTitle, time: eventTime.toTimeString().slice(0, 5), text: eventText };
     try {
       const docRef = await firestore.collection('events').add(newEvent);
       setEvents((prevEvents) => {
@@ -62,7 +64,7 @@ const CalendarScreen = () => {
         return updatedEvents;
       });
       setEventTitle('');
-      setEventTime('');
+      setEventTime(new Date());
       setEventText('');
       setShowEventForm(false);
       setModalVisible(false);
@@ -70,6 +72,34 @@ const CalendarScreen = () => {
     } catch (error) {
       Alert.alert('Error', 'Failed to add event.');
       console.error('Error adding event:', error);
+    }
+  };
+
+  const handleEditEvent = (event) => {
+    setEventTitle(event.title);
+    setEventTime(new Date(event.time));
+    setEventText(event.text);
+    setShowEventForm(true);
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    try {
+      await firestore.collection('events').doc(eventId).delete();
+      setEvents((prevEvents) => {
+        const updatedEvents = { ...prevEvents };
+        const eventDate = Object.keys(updatedEvents).find(date => updatedEvents[date].events.some(event => event.id === eventId));
+        if (eventDate) {
+          updatedEvents[eventDate].events = updatedEvents[eventDate].events.filter(event => event.id !== eventId);
+          if (updatedEvents[eventDate].events.length === 0) {
+            delete updatedEvents[eventDate];
+          }
+        }
+        return updatedEvents;
+      });
+      Alert.alert( 'Händelse raderat.');
+    } catch (error) {
+      Alert.alert('Error', 'Det gick inte att radera händelse.');
+      console.error('Error deleting event:', error);
     }
   };
 
@@ -81,6 +111,12 @@ const CalendarScreen = () => {
       setShowEventForm(true);
     }
     setModalVisible(true);
+  };
+
+  const handleTimeChange = (event, selectedTime) => {
+    const currentTime = selectedTime || eventTime;
+    setShowTimePicker(false);
+    setEventTime(currentTime);
   };
 
   return (
@@ -97,9 +133,9 @@ const CalendarScreen = () => {
         theme={{
           calendarBackground: 'white',
           textSectionTitleColor: 'black',
-          todayTextColor: 'red',
+          todayTextColor: 'black',
           dayTextColor: 'black',
-          textDayFontSize: 16, // Större siffror
+          textDayFontSize: 20, // Större siffror
           textMonthFontSize: 20, // Större månadsnamn
           textDayHeaderFontSize: 16, // Större dagarsnamn
           dotColor: 'blue',
@@ -111,19 +147,53 @@ const CalendarScreen = () => {
             marginVertical: 1,
           },
           'stylesheet.day.basic': {
+            //varje ruta i kalendern
             base: {
-              width: 32,
-              height: 32,
+              width: 50, // bredden på varje ruta
+              height: 70, //  Höjden på varje ruta här
               alignItems: 'center',
               justifyContent: 'center',
+              borderWidth: 1, // Kantlinje runt varje datumruta
+              borderColor: 'lightgray', // Färg på kantlinje
+            },
+            selected: {
+              backgroundColor: '#ffeb3b',
+              borderRadius: 0,
+            },
+            today: {
+              backgroundColor: 'lightgray',
+              borderRadius: 0,
             },
             text: {
               marginTop: 6,
               fontSize: 16,
               fontWeight: 'bold',
             }
-          }
+          },
+          'stylesheet.calendar.header': {
+            week: {
+              marginTop: 5,
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+              borderWidth: 1,
+              borderColor: 'lightgray',
+            },
+            dayHeader: {
+              fontSize: 16,
+              fontWeight: 'bold',
+              color: 'black',
+              marginTop: 5,
+              marginBottom: 10,
+            },
+            dayTextAtIndex0: {
+              color: 'black',
+            },
+            dayTextAtIndex6: {
+              color: 'black',
+            },
+          },
         }}
+        firstDay={1} // Måndag först
       />
       <Modal
         visible={modalVisible}
@@ -144,12 +214,21 @@ const CalendarScreen = () => {
                   value={eventTitle}
                   onChangeText={setEventTitle}
                 />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Välj en tid för händelsen (HH:MM)"
-                  value={eventTime}
-                  onChangeText={setEventTime}
-                />
+                <View style={styles.timePickerContainer}>
+                  <TouchableOpacity style={styles.timePickerButton} onPress={() => setShowTimePicker(true)}>
+                    <Text style={styles.buttonText}>Välj tid</Text>
+                  </TouchableOpacity>
+
+                  {showTimePicker && (
+                    <DateTimePicker
+                      value={eventTime}
+                      mode="time"
+                      is24Hour={true}
+                      display="default"
+                      onChange={handleTimeChange}
+                    />
+                  )}
+                </View>
                 <TextInput
                   style={[styles.input, styles.inputText]}
                   placeholder="Beskrivning"
@@ -161,7 +240,7 @@ const CalendarScreen = () => {
               </ScrollView>
             ) : (
               <>
-                <Text style={styles.dateTitle}>{`Events for ${selectedDate}`}</Text>
+                <Text style={styles.dateTitle}>{` ${selectedDate}`}</Text>
                 {events[selectedDate] && events[selectedDate].events.length > 0 ? (
                   <FlatList
                     data={events[selectedDate].events}
@@ -169,8 +248,17 @@ const CalendarScreen = () => {
                     renderItem={({ item }) => (
                       <View style={styles.eventItem}>
                         <Text style={styles.eventTitle}>{item.title}</Text>
-                        <Text>{item.time}</Text>
-                        <Text>{item.text}</Text>
+                        <Text style={styles.eventTime}>{item.time}</Text>
+                        <Text style={styles.eventText}>{item.text}</Text>
+                        {/* Styling för händelseknappar */}
+                        <View style={styles.eventButtonsContainer}>
+                          <TouchableOpacity onPress={() => handleEditEvent(item)}>
+                            <Icon name="edit" size={24} color="blue" />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => handleDeleteEvent(item.id)}>
+                            <Icon name="delete" size={24} color="red" />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     )}
                   />
@@ -190,7 +278,7 @@ const CalendarScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 5,
     backgroundColor: 'white',
   },
   header: {
@@ -199,12 +287,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
+  //dagens datum i alert
   dateTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
-    marginTop: 30,
+    marginTop: 0,
   },
+    //rubrik
   input: {
     height: 40,
     borderColor: 'gray',
@@ -212,30 +302,57 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 10,
     width: '100%',
+
   },
   inputTitle: {
-    fontSize: 20,
+    fontSize: 25,
+    fontFamily: Platform.OS === 'ios' ? 'Arial' : 'sans-serif',
+
   },
+  //beskrivning i alert
   inputText: {
     minHeight: 80,
     textAlignVertical: 'top',
+    fontFamily: Platform.OS === 'ios' ? 'Arial' : 'sans-serif',
+    width: '300',
+    fontSize: 25,
+
   },
+  //boxen för händelseb, dvs rubrik tid, beskrivning och iconer
   eventItem: {
-    padding: 10,
+    padding: 20,
     borderBottomColor: 'gray',
-    borderBottomWidth: 1,
     marginBottom: 20,
+
+    
   },
+  //rubrik i alert
   eventTitle: {
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 29,
+    fontFamily: Platform.OS === 'ios' ? 'Arial' : 'sans-serif',
+    justifyContent: 'center',
+
   },
+  // tid i alert
+  eventTime: {
+    fontSize: 22,
+    fontFamily: Platform.OS === 'ios' ? 'Arial' : 'sans-serif',
+  },
+  // beskrivning i alert
+  eventText: {
+    fontSize: 25,
+    fontFamily: Platform.OS === 'ios' ? 'Arial' : 'sans-serif',
+    justifyContent: 'center',
+  },
+  //bakgrunden för alert (de som visas bakom)
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
+  //alerten med händelsen
   modalContent: {
     width: '90%',
     backgroundColor: 'white',
@@ -245,6 +362,39 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignSelf: 'flex-end',
+  },
+  //iconerna för redigering och delete
+  eventButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 10,
+    width: '100%',
+    
+  },
+  eventButton: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  timePickerContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginVertical: 10,
+    borderColor: 'gray', // Färg på kantlinjen
+    borderWidth: 1, // Kantlinjens tjocklek
+    borderRadius: 5, // Rundade hörn på kantlinjen
+    paddingVertical: 10, // Vertikal padding inuti rutan
+  },
+  timePickerButton: {
+    backgroundColor: 'white',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'gray',
+    fontWeight: 'bold',
   },
 });
 
